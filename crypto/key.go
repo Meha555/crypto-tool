@@ -9,6 +9,10 @@ type Key struct {
 	key []byte
 }
 
+func NewKey(key []byte) *Key {
+	return &Key{key: key}
+}
+
 func (k *Key) Key() []byte {
 	return k.key
 }

@@ -15,16 +15,16 @@ func Hash(algorithm string, input []byte, salt []byte) (output []byte, err error
 		input = append(salt, input...)
 	}
 	switch strings.ToLower(algorithm) {
-	case "md5":
+	case HashMD5:
 		md5sum := md5.Sum(input) // 16 bytes
 		output = md5sum[:]
-	case "sha1":
+	case HashSHA1:
 		sha1sum := sha1.Sum(input) // 20 bytes
 		output = sha1sum[:]
-	case "sha256":
+	case HashSHA256:
 		sha256sum := sha256.Sum256(input) // 32 bytes
 		output = sha256sum[:]
-	case "sha512":
+	case HashSHA512:
 		sha512sum := sha512.Sum512(input) // 64 bytes
 		output = sha512sum[:]
 	default:

@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/meha555/crypto-tool/crypto"
+	"github.com/meha555/crypto-tool/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -24,9 +25,8 @@ var signCmd = &cobra.Command{
 			return fmt.Errorf("failed to read input file: %w", err)
 		}
 
-		// Decode key
 		var rawKey *crypto.Key
-		rawKey, err = crypto.StringToKey(signKey)
+		rawKey, err = utils.ReadKey(signEncryptAlgorithm, signKey)
 		if err != nil {
 			return
 		}

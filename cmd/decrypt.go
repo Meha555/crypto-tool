@@ -4,10 +4,10 @@ Copyright © 2025 Meha555
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/meha555/crypto-tool/crypto"
+	"github.com/meha555/crypto-tool/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -16,17 +16,8 @@ var decryptCmd = &cobra.Command{
 	Use:   "decrypt -c <encryption-algorithm> -i <input-file> -o <output-file> -k <key>",
 	Short: "Decrypt a file using a specified encryption algorithm",
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		rawKey, err := crypto.StringToKey(decryptKey)
-		if err != nil {
-			return
-		}
-		var decrypter crypto.Decrypter
-		switch decryptAlgorithm {
-		case "AES":
-			decrypter, err = crypto.NewAESWithKey(rawKey, "GCM")
-		default:
-			err = fmt.Errorf("unsupport decrypt algorithm: %s", decryptAlgorithm)
-		}
+		var rawKey *crypto.Key
+		rawKey, err = utils.ReadKey(decryptAlgorithm, decryptKey)
 		if err != nil {
 			return
 		}
@@ -36,15 +27,12 @@ var decryptCmd = &cobra.Command{
 		if err != nil {
 			return
 		}
-		plainData, err = decrypter.Decrypt(cipherData)
+		plainData, err = crypto.Decrypt(decryptAlgorithm, cipherData, rawKey)
 		if err != nil {
 			return
 		}
-		if outputFile == "" {
-			_, err = fmt.Printf("%s", plainData)
-		} else {
-			err = os.WriteFile(outputFile, plainData, 0644)
-		}
+
+		utils.Write(outputFile, plainData, 0644)
 		return
 	},
 }
@@ -59,6 +47,6 @@ func init() {
 
 	decryptCmd.Flags().StringVarP(&inputFile, "input", "i", "", "input file")
 	decryptCmd.Flags().StringVarP(&decryptAlgorithm, "crypto", "c", "", "decrypt algorithm")
-	decryptCmd.Flags().StringVarP(&decryptKey, "key", "k", "", "decrypt key")
+	decryptCmd.Flags().StringVarP(&decryptKey, "key", "k", "", "decrypt [private] key")
 	MarkFlagsRequired(decryptCmd, "crypto", "input", "key")
 }

@@ -1,6 +1,8 @@
 package crypto
 
 import (
+	"bytes"
+	"crypto"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -30,7 +32,7 @@ func NewAESWithKey(key *Key, mode string) (*AES, error) {
 	case "GCM":
 		cipherMode, err = cipher.NewGCM(block)
 	default:
-		return nil, errors.New("unsupport cipher mode: " + mode)
+		return nil, errors.New("unsupported cipher mode: " + mode)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("create cipher mode failed: %w", err)
@@ -54,7 +56,7 @@ func (a *AES) Encrypt(plainText []byte) (cipherText []byte, err error) {
 		}
 		cipherText = gcm.Seal(nonce, nonce, plainText, nil)
 	default:
-		panic("unsupport cipher mode: " + fmt.Sprintf("%T", a.mode))
+		panic("unsupported cipher mode: " + fmt.Sprintf("%T", a.mode))
 	}
 	return
 }
@@ -70,7 +72,19 @@ func (a *AES) Decrypt(cipherText []byte) (plainText []byte, err error) {
 		nonce, cipherText = cipherText[:gcm.NonceSize()], cipherText[gcm.NonceSize():]
 		plainText, err = gcm.Open(nil, nonce, cipherText, nil)
 	default:
-		panic("unsupport cipher mode: " + fmt.Sprintf("%T", a.mode))
+		panic("unsupported cipher mode: " + fmt.Sprintf("%T", a.mode))
 	}
 	return
+}
+
+func (a *AES) Sign(digest []byte, hash crypto.Hash) (signature []byte, err error) {
+	return a.Encrypt(digest)
+}
+
+func (a *AES) Verify(digest []byte, signature []byte, hash crypto.Hash) (bool, error) {
+	decryptedSignature, err := a.Decrypt(signature)
+	if err != nil {
+		return false, fmt.Errorf("decrypt signature failed: %w", err)
+	}
+	return bytes.Equal(decryptedSignature, digest), nil
 }

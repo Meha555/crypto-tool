@@ -5,10 +5,10 @@ package cmd
 
 import (
 	"encoding/hex"
-	"fmt"
 	"os"
 
 	"github.com/meha555/crypto-tool/crypto"
+	"github.com/meha555/crypto-tool/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +27,7 @@ var hashCmd = &cobra.Command{
 		if err != nil {
 			return
 		}
-		fmt.Println(hex.EncodeToString(outputData))
+		err = utils.WriteString(outputFile, hex.EncodeToString(outputData), 0644)
 		return
 	},
 }
