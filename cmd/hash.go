@@ -4,26 +4,25 @@ Copyright © 2025 Meha555
 package cmd
 
 import (
-	"crypto"
 	"encoding/hex"
 	"fmt"
 	"os"
 
+	"github.com/meha555/crypto-tool/crypto"
 	"github.com/spf13/cobra"
 )
 
 // hashCmd represents the hash command
 var hashCmd = &cobra.Command{
-	Use:   "hash",
+	Use:   "hash -d <hash-algorithm> -i <input-file> -s <salt>",
 	Short: "Hash a file using a specified hash algorithm",
-	Long:  `hash -d <hash-algorithm> -i <input-file> -s <salt>`,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var inputData, outputData []byte
 		inputData, err = os.ReadFile(inputFile)
 		if err != nil {
 			return
 		}
-		salt := []byte(hashSalt)
+		salt := []byte(hashSalt) // 不当作hexstring
 		outputData, err = crypto.Hash(hashAlgorithm, inputData, salt)
 		if err != nil {
 			return

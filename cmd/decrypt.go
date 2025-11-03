@@ -4,7 +4,6 @@ Copyright © 2025 Meha555
 package cmd
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -14,17 +13,12 @@ import (
 
 // decryptCmd represents the decrypt command
 var decryptCmd = &cobra.Command{
-	Use:   "decrypt",
+	Use:   "decrypt -c <encryption-algorithm> -i <input-file> -o <output-file> -k <key>",
 	Short: "Decrypt a file using a specified encryption algorithm",
-	Long: `Decrypt a file using a specified encryption algorithm.
-
-For example:
-
-decrypt -c <encryption-algorithm> -i <input-file> -o <output-file> -k <key>`,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		rawKey, err := base64.StdEncoding.DecodeString(decryptKey)
+		rawKey, err := crypto.StringToKey(decryptKey)
 		if err != nil {
-			return fmt.Errorf("decode key failed: %w", err)
+			return
 		}
 		var decrypter crypto.Decrypter
 		switch decryptAlgorithm {

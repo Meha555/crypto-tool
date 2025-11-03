@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
+	"strings"
 )
 
 func Hash(algorithm string, input []byte, salt []byte) (output []byte, err error) {
@@ -13,7 +14,7 @@ func Hash(algorithm string, input []byte, salt []byte) (output []byte, err error
 	if len(salt) > 0 {
 		input = append(salt, input...)
 	}
-	switch algorithm {
+	switch strings.ToLower(algorithm) {
 	case "md5":
 		md5sum := md5.Sum(input) // 16 bytes
 		output = md5sum[:]

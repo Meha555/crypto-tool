@@ -9,18 +9,18 @@ import (
 )
 
 type AES struct {
-	key   []byte
+	key   *Key
 	block cipher.Block
 	mode  interface{}
 }
 
 // TODO 假定是GCM模式
 
-func NewAESWithKey(key []byte, mode string) (*AES, error) {
-	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
+func NewAESWithKey(key *Key, mode string) (*AES, error) {
+	if key.Len() != 16 && key.Len() != 24 && key.Len() != 32 {
 		return nil, fmt.Errorf("AES Key must be 16, 24 or 32 bytes")
 	}
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(key.Key())
 	if err != nil {
 		return nil, err
 	}

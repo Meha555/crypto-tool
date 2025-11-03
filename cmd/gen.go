@@ -5,27 +5,62 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/meha555/crypto-tool/crypto"
 	"github.com/spf13/cobra"
 )
 
 // genCmd represents the gen command
 var genCmd = &cobra.Command{
-	Use:   "gen",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "gen -c <encryption-algorithm> -l <key-length> -o <output-file>",
+	Short: "Generate keys for specified algorithm",
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		var key *crypto.Key
+		var length int
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("gen called")
+		// Set key length based on algorithm
+		switch genAlgorithm {
+		case "AES":
+			length = int(genLength)
+			key, err = crypto.GenerateKey(length)
+			if err != nil {
+				return fmt.Errorf("failed to generate key: %w", err)
+			}
+		// case "RSA":
+		// 	length = int(genLength)
+		// 	key, err = crypto.GenerateKey(length)
+		// 	if err != nil {
+		// 		return fmt.Errorf("failed to generate key: %w", err)
+		// 	}
+		default:
+			return fmt.Errorf("unsupported algorithm: %s", genAlgorithm)
+		}
+
+		// Output key
+		if outputFile == "" {
+			fmt.Println(key.String())
+		} else {
+			err = os.WriteFile(outputFile, []byte(key.String()), 0644)
+			if err != nil {
+				return fmt.Errorf("failed to write key to file: %w", err)
+			}
+			fmt.Printf("Key generated and saved to %s\n", outputFile)
+		}
+
+		return nil
 	},
 }
+
+var (
+	genAlgorithm string
+	genLength    uint32
+)
 
 func init() {
 	rootCmd.AddCommand(genCmd)
 
-	genCmd.Flags().MarkHidden("input");
+	genCmd.Flags().StringVarP(&genAlgorithm, "crypto", "c", "", "encryption algorithm")
+	genCmd.Flags().Uint32VarP(&genLength, "key-length", "l", 32, "key length (bytes)")
+	MarkFlagsRequired(genCmd, "crypto")
 }

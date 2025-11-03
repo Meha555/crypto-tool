@@ -4,6 +4,7 @@ Copyright © 2025 Meha555
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -13,6 +14,9 @@ var rootCmd = &cobra.Command{
 	Use:   "crypto-tool",
 	Short: "A cli tool for crypto operations",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if versionFlag {
+			fmt.Println(version)
+		}
 		return nil
 	},
 	TraverseChildren: true,
@@ -26,12 +30,15 @@ func Execute() {
 }
 
 var (
-	inputFile  string
-	outputFile string
+	inputFile   string
+	outputFile  string
+	versionFlag bool
+	version     string
 )
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "output file")
+	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "print version")
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 
