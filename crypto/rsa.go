@@ -4,10 +4,12 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
 )
 
 type RSAPublicKey struct {
@@ -105,6 +107,7 @@ func EncodePrivateKeyToMemory(privKey *rsa.PrivateKey) ([]byte, error) {
 type RSA struct {
 	pubKey  *rsa.PublicKey
 	privKey *rsa.PrivateKey
+	padding string
 }
 
 func (r *RSA) PrivKey() *rsa.PrivateKey {
@@ -115,17 +118,10 @@ func (r *RSA) PubKey() *rsa.PublicKey {
 	return r.pubKey
 }
 
-// NOTE 只支持PKCS8格式的公私钥
-// var keyTypes = map[string]map[string]string{
-// 	"PKCS1": map[string]string{
-// 		"PRIVATE": "RSA PRIVATE KEY",
-// 		"PUBLIC":  "RSA PUBLIC KEY",
-// 	},
-// 	"PKCS8": map[string]string{
-// 		"PRIVATE": "PRIVATE KEY",
-// 		"PUBLIC":  "PUBLIC KEY",
-// 	},
-// }
+// SetPadding 设置RSA填充模式
+func (r *RSA) SetPadding(padding string) {
+	r.padding = padding
+}
 
 func GenerateRSAKeyPair(bits int /*, keyType string*/) (pubKey *Key, privKey *Key, err error) {
 	var priK *rsa.PrivateKey
@@ -200,7 +196,8 @@ func GenerateRSAKeyPair(bits int /*, keyType string*/) (pubKey *Key, privKey *Ke
 // NewRSAWithPublicKey 创建一个使用公钥的RSA加密器
 func NewRSAWithPublicKey(pubKey *rsa.PublicKey) *RSA {
 	return &RSA{
-		pubKey: pubKey,
+		pubKey:  pubKey,
+		padding: RSAPaddingPKCS1, // 默认使用PKCS1填充
 	}
 }
 
@@ -209,6 +206,7 @@ func NewRSAWithPrivateKey(privKey *rsa.PrivateKey) *RSA {
 	return &RSA{
 		privKey: privKey,
 		pubKey:  &privKey.PublicKey,
+		padding: RSAPaddingPKCS1, // 默认使用PKCS1填充
 	}
 }
 
@@ -217,10 +215,48 @@ func (r *RSA) Encrypt(plainText []byte) (cipherText []byte, err error) {
 	if r.pubKey == nil {
 		return nil, fmt.Errorf("RSA public key is required for encryption")
 	}
-	cipherText, err = rsa.EncryptPKCS1v15(rand.Reader, r.pubKey, plainText)
-	if err != nil {
-		return nil, fmt.Errorf("RSA encryption failed: %w", err)
+
+	switch r.padding {
+	case RSAPaddingNone:
+		// 不使用填充（不推荐，仅用于兼容性）
+		// 手动通过模幂运算实现
+		k := (r.pubKey.N.BitLen() + 8 - 1) / 8 // 向上取整将位转换位字节数
+		// 即使在"无填充"模式下，出于安全考虑，仍然需要保留一定的空间
+		// 11字节包括：
+		// - 1字节的类型标识符（通常是0x00或0x01或0x02）
+		// - 至少8字节的随机填充（用于安全性）
+		// - 1字节的分隔符（通常是0x00）
+		// 总计至少10字节，加上安全余量就是11字节
+		if len(plainText) > k-11 {
+			return nil, fmt.Errorf("message too long for RSA encryption without padding")
+		}
+		m := new(big.Int).SetBytes(plainText)
+		e := big.NewInt(int64(r.pubKey.E))
+		c := new(big.Int).Exp(m, e, r.pubKey.N)
+		cipherText = c.Bytes()
+
+		// 确保输出长度正确
+		if len(cipherText) < k {
+			padded := make([]byte, k)
+			copy(padded[k-len(cipherText):], cipherText)
+			cipherText = padded
+		}
+	case RSAPaddingOAEP:
+		// 使用OAEP填充
+		cipherText, err = rsa.EncryptOAEP(sha256.New(), rand.Reader, r.pubKey, plainText, nil)
+		if err != nil {
+			return nil, fmt.Errorf("RSA encryption with OAEP failed: %w", err)
+		}
+	case RSAPaddingPKCS1:
+		fallthrough
+	default:
+		// 使用PKCS1 v1.5填充（默认）
+		cipherText, err = rsa.EncryptPKCS1v15(rand.Reader, r.pubKey, plainText)
+		if err != nil {
+			return nil, fmt.Errorf("RSA encryption with PKCS1 failed: %w", err)
+		}
 	}
+
 	return
 }
 
@@ -229,10 +265,42 @@ func (r *RSA) Decrypt(cipherText []byte) (plainText []byte, err error) {
 	if r.privKey == nil {
 		return nil, fmt.Errorf("RSA private key is required for decryption")
 	}
-	plainText, err = rsa.DecryptPKCS1v15(rand.Reader, r.privKey, cipherText)
-	if err != nil {
-		return nil, fmt.Errorf("RSA decryption failed: %w", err)
+
+	switch r.padding {
+	case RSAPaddingNone:
+		// 不使用填充解密（不推荐，仅用于兼容性）
+		// 手动通过模幂运算实现
+		k := (r.privKey.N.BitLen() + 8 - 1) / 8 // 向上取整将位转换位字节数
+		if len(cipherText) != k {
+			return nil, fmt.Errorf("ciphertext length does not match RSA key size")
+		}
+
+		c := new(big.Int).SetBytes(cipherText)
+		m := new(big.Int).Exp(c, r.privKey.D, r.privKey.N)
+		plainText = m.Bytes()
+
+		// 确保输出长度正确
+		if len(plainText) < k {
+			padded := make([]byte, k)
+			copy(padded[k-len(plainText):], plainText)
+			plainText = padded
+		}
+	case RSAPaddingOAEP:
+		// 使用OAEP填充解密
+		plainText, err = rsa.DecryptOAEP(sha256.New(), rand.Reader, r.privKey, cipherText, nil)
+		if err != nil {
+			return nil, fmt.Errorf("RSA decryption with OAEP failed: %w", err)
+		}
+	case RSAPaddingPKCS1:
+		fallthrough
+	default:
+		// 使用PKCS1 v1.5填充解密（默认）
+		plainText, err = rsa.DecryptPKCS1v15(rand.Reader, r.privKey, cipherText)
+		if err != nil {
+			return nil, fmt.Errorf("RSA decryption with PKCS1 failed: %w", err)
+		}
 	}
+
 	return
 }
 
@@ -260,4 +328,14 @@ func (r *RSA) Verify(digest []byte, signature []byte, hash crypto.Hash) (bool, e
 		return false, fmt.Errorf("RSA verification failed: %w", err)
 	}
 	return true, nil
+}
+
+// 验证填充模式是否有效
+func ValidatePaddingMode(mode string) bool {
+	switch mode {
+	case "pkcs1", "oaep", "none":
+		return true
+	default:
+		return false
+	}
 }

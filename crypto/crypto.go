@@ -44,7 +44,7 @@ func GenerateKey(length int) (*Key, error) {
 	return &Key{key}, nil
 }
 
-func Encrypt(algorithm string, plainText []byte, key *Key) (cipherText []byte, err error) {
+func Encrypt(algorithm string, plainText []byte, key *Key, extraOpt any) (cipherText []byte, err error) {
 	var encrypter Encrypter
 	switch strings.ToLower(algorithm) {
 	case CryptoAES:
@@ -57,6 +57,9 @@ func Encrypt(algorithm string, plainText []byte, key *Key) (cipherText []byte, e
 			return nil, err
 		}
 		encrypter = NewRSAWithPublicKey(rsaPubKey.PubKey())
+		if extraOpt != nil {
+			encrypter.(*RSA).SetPadding(extraOpt.(string))
+		}
 	default:
 		err = fmt.Errorf("encrypt algorithm %s not supported", algorithm)
 	}
@@ -68,7 +71,7 @@ func Encrypt(algorithm string, plainText []byte, key *Key) (cipherText []byte, e
 	return
 }
 
-func Decrypt(algorithm string, cipherText []byte, key *Key) (plainText []byte, err error) {
+func Decrypt(algorithm string, cipherText []byte, key *Key, extraOpt any) (plainText []byte, err error) {
 	var decrypter Decrypter
 	switch strings.ToLower(algorithm) {
 	case CryptoAES:
@@ -81,6 +84,9 @@ func Decrypt(algorithm string, cipherText []byte, key *Key) (plainText []byte, e
 			return nil, err
 		}
 		decrypter = NewRSAWithPrivateKey(rsaPrivKey.PriKey())
+		if extraOpt != nil {
+			decrypter.(*RSA).SetPadding(extraOpt.(string))
+		}
 	default:
 		err = fmt.Errorf("decrypt algorithm %s not supported", algorithm)
 	}

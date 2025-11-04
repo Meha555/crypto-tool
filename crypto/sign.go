@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func Sign(hashAlgorithm string, encryptAlgorithm string, input []byte, key *Key) (signature []byte, err error) {
+func Sign(hashAlgorithm string, encryptAlgorithm string, input []byte, key *Key, extraOpt any) (signature []byte, err error) {
 	// hash
 	digest, err := Hash(hashAlgorithm, input, nil)
 	if err != nil {
@@ -31,6 +31,9 @@ func Sign(hashAlgorithm string, encryptAlgorithm string, input []byte, key *Key)
 		}
 		// 创建RSA实例并进行签名
 		signer = NewRSAWithPrivateKey(rsaPrivKey.PriKey())
+		if extraOpt != nil {
+			signer.(*RSA).SetPadding(extraOpt.(string))
+		}
 	default:
 		err = fmt.Errorf("unsupported encrypt algorithm: %s", encryptAlgorithm)
 	}
@@ -47,7 +50,7 @@ func Sign(hashAlgorithm string, encryptAlgorithm string, input []byte, key *Key)
 	return
 }
 
-func Verify(hashAlgorithm string, decryptAlgorithm string, input []byte, signature []byte, key *Key) (success bool, err error) {
+func Verify(hashAlgorithm string, decryptAlgorithm string, input []byte, signature []byte, key *Key, extraOpt any) (success bool, err error) {
 	// 计算输入数据的哈希值
 	inputHash, err := Hash(hashAlgorithm, input, nil)
 	if err != nil {
@@ -76,6 +79,9 @@ func Verify(hashAlgorithm string, decryptAlgorithm string, input []byte, signatu
 		} else {
 			// 创建RSA实例并进行验证
 			verifier = NewRSAWithPublicKey(rsaPubKey.PubKey())
+		}
+		if extraOpt != nil {
+			verifier.(*RSA).SetPadding(extraOpt.(string))
 		}
 	default:
 		err = fmt.Errorf("unsupported decrypt algorithm: %s", decryptAlgorithm)

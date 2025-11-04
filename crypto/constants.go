@@ -32,3 +32,9 @@ const (
 	CryptoAES = "aes"
 	CryptoRSA = "rsa"
 )
+
+const (
+	RSAPaddingPKCS1 = "pkcs1"
+	RSAPaddingOAEP  = "oaep"
+	RSAPaddingNone  = "none"
+)

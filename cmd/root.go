@@ -25,13 +25,15 @@ func Execute() {
 }
 
 var (
-	inputFile  string
-	outputFile string
-	version    string
+	version     string
+	inputFile   string
+	outputFile  string
+	paddingMode string
 )
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "output file")
+	rootCmd.PersistentFlags().StringVarP(&paddingMode, "padding", "p", "pkcs1", "padding mode (pkcs1, oaep, none)")
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 

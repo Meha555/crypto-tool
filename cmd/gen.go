@@ -88,7 +88,7 @@ func init() {
 
 	genCmd.Flags().StringVarP(&genAlgorithm, "crypto", "c", "", "encryption algorithm")
 	genCmd.Flags().Uint32VarP(&genKeyLength, "key-length", "l", 0, "key length (bytes)")
-	genCmd.Flags().StringVarP(&genPrivKey, "priv-key", "p", "", "private key")
+	genCmd.Flags().StringVarP(&genPrivKey, "priv-key", "k", "", "private key")
 	MarkFlagsRequired(genCmd, "crypto")
 	genCmd.MarkFlagsMutuallyExclusive("key-length", "priv-key")
 }

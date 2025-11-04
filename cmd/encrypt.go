@@ -4,6 +4,7 @@ Copyright © 2025 Meha555
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/meha555/crypto-tool/crypto"
@@ -17,6 +18,11 @@ var encryptCmd = &cobra.Command{
 	Short: "Encrypt a file using a specified encryption algorithm",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		// 验证填充模式
+		if !crypto.ValidatePaddingMode(paddingMode) {
+			return fmt.Errorf("invalid padding mode: %s, must be one of pkcs1, oaep, none", paddingMode)
+		}
+
 		var rawKey *crypto.Key
 		rawKey, err = utils.ReadKey(encryptAlgorithm, encryptKey)
 		if err != nil {
@@ -28,7 +34,7 @@ var encryptCmd = &cobra.Command{
 		if err != nil {
 			return
 		}
-		cipherData, err = crypto.Encrypt(encryptAlgorithm, plainData, rawKey)
+		cipherData, err = crypto.Encrypt(encryptAlgorithm, plainData, rawKey, paddingMode)
 		if err != nil {
 			return
 		}

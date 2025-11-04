@@ -19,6 +19,11 @@ var verifyCmd = &cobra.Command{
 	Short: "Verify a signature with specified algorithm",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		// 验证填充模式
+		if !crypto.ValidatePaddingMode(paddingMode) {
+			return fmt.Errorf("invalid padding mode: %s, must be one of pkcs1, oaep, none", paddingMode)
+		}
+
 		// Read input file
 		var inputData []byte
 		inputData, err = os.ReadFile(inputFile)
@@ -50,7 +55,7 @@ var verifyCmd = &cobra.Command{
 
 		// Verify signature
 		var success bool
-		success, err = crypto.Verify(verifyHashAlgorithm, verifyEncryptAlgorithm, inputData, signature, rawKey)
+		success, err = crypto.Verify(verifyHashAlgorithm, verifyEncryptAlgorithm, inputData, signature, rawKey, paddingMode)
 		if err != nil {
 			return fmt.Errorf("failed to verify signature: %w", err)
 		}

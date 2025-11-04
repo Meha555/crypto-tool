@@ -19,6 +19,11 @@ var signCmd = &cobra.Command{
 	Short: "Sign data with specified algorithm",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		// 验证填充模式
+		if !crypto.ValidatePaddingMode(paddingMode) {
+			return fmt.Errorf("invalid padding mode: %s, must be one of pkcs1, oaep, none", paddingMode)
+		}
+
 		// Read input file
 		var inputData []byte
 		inputData, err = os.ReadFile(inputFile)
@@ -34,7 +39,7 @@ var signCmd = &cobra.Command{
 
 		// Sign data
 		var signature []byte
-		signature, err = crypto.Sign(signHashAlgorithm, signEncryptAlgorithm, inputData, rawKey)
+		signature, err = crypto.Sign(signHashAlgorithm, signEncryptAlgorithm, inputData, rawKey, paddingMode)
 		if err != nil {
 			return fmt.Errorf("failed to sign data: %w", err)
 		}
