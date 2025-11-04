@@ -7,4 +7,6 @@
 - [x] 指定加密方式和哈希方式进行签名：`sign -c 加密算法 -d 哈希算法 -i 输入文件 -o 输出文件 -k 密钥`
 - [x] 指定加密方式和哈希方式，以及签名进行验签：`verify -c 加密算法 -d 哈希算法 -s 签名文件/字符串 -i 输入文件 -k 密钥`
 - [x] 生成指定算法的密钥/公私钥：`gen -c 加密算法 -o 输出文件 -l 密钥长度`
-- [ ] 证书功能
+- [x] 证书功能：
+  - 创建CA：`cert create-ca --common-name "Your CA Name" -c ca.crt -k ca.key`
+  - 签发证书：`cert issue --common-name "yourdomain.com" --ca-cert ca.crt --ca-key ca.key -c server.crt -k server.key`
