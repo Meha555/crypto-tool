@@ -10,7 +10,7 @@ import (
 
 func Write(dst string, data []byte, perm os.FileMode) error {
 	if dst == "" {
-		fmt.Println(data)
+		fmt.Println(string(data))
 	} else {
 		err := os.WriteFile(dst, data, perm)
 		if err != nil {

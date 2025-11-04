@@ -17,6 +17,7 @@ import (
 var signCmd = &cobra.Command{
 	Use:   "sign -c <encryption-algorithm> -d <hash-algorithm> -i <input-file> -o <output-file> -k <key>",
 	Short: "Sign data with specified algorithm",
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		// Read input file
 		var inputData []byte
@@ -42,7 +43,7 @@ var signCmd = &cobra.Command{
 		if outputFile == "" {
 			fmt.Println(base64.StdEncoding.EncodeToString(signature))
 		} else {
-			err = os.WriteFile(outputFile, signature, 0644)
+			err = os.WriteFile(outputFile, signature, 0o644)
 			if err != nil {
 				return fmt.Errorf("failed to write signature to file: %w", err)
 			}

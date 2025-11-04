@@ -17,6 +17,7 @@ import (
 var genCmd = &cobra.Command{
 	Use:   "gen -c <encryption-algorithm> -l <key-length> -o <output-file>",
 	Short: "Generate keys for specified algorithm",
+	Args:  cobra.NoArgs,
 	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
 		if genKeyLength == 0 && genPrivKey == "" {
 			return fmt.Errorf("either key-length or priv-key must be specified")
@@ -31,7 +32,7 @@ var genCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("failed to generate AES key: %w", err)
 			}
-			err = utils.Write(outputFile, []byte(key.String()), 0644)
+			err = utils.Write(outputFile, []byte(key.String()), 0o644)
 		case crypto.CryptoRSA:
 			if genPrivKey == "" {
 				// 未指定私钥，说明要生成公私钥对
@@ -41,8 +42,8 @@ var genCmd = &cobra.Command{
 					return
 				}
 
-				utils.Write(outputFile, pubKey.Key(), 0644)
-				utils.Write(outputFile, privKey.Key(), 0600)
+				utils.Write(outputFile, pubKey.Key(), 0o644)
+				utils.Write(outputFile, privKey.Key(), 0o600)
 			} else {
 				// 否则说明是从私钥中提取公钥
 				var (
@@ -64,7 +65,7 @@ var genCmd = &cobra.Command{
 					return
 				}
 
-				utils.Write(outputFile, pubKey, 0644)
+				utils.Write(outputFile, pubKey, 0o644)
 			}
 
 		default:

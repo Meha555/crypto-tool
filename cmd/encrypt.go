@@ -15,6 +15,7 @@ import (
 var encryptCmd = &cobra.Command{
 	Use:   "encrypt -c <encryption-algorithm> -i <input-file> -o <output-file> -k <key>",
 	Short: "Encrypt a file using a specified encryption algorithm",
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var rawKey *crypto.Key
 		rawKey, err = utils.ReadKey(encryptAlgorithm, encryptKey)
@@ -31,7 +32,7 @@ var encryptCmd = &cobra.Command{
 		if err != nil {
 			return
 		}
-		return utils.Write(outputFile, cipherData, 0644)
+		return utils.Write(outputFile, cipherData, 0o644)
 	},
 }
 

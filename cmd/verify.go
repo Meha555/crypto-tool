@@ -17,6 +17,7 @@ import (
 var verifyCmd = &cobra.Command{
 	Use:   "verify -c <encryption-algorithm> -d <hash-algorithm> -s <signature-file/string> -i <input-file>",
 	Short: "Verify a signature with specified algorithm",
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		// Read input file
 		var inputData []byte
